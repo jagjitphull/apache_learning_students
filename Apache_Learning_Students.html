@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Apache Virtual Hosts - Beginner Training & Lab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        code, pre {
+            background: #eef;
+            padding: 10px;
+            display: block;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .box {
+            background: #ffffff;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #3498db;
+        }
+        .lab {
+            border-left: 5px solid #27ae60;
+        }
+        .note {
+            border-left: 5px solid #f39c12;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Apache Virtual Hosts – Beginner Training & Hands-on Lab</h1>
+
+<div class="box note">
+<b>Target Audience:</b> Beginners, Linux users, DevOps aspirants<br>
+<b>OS:</b> Ubuntu 20.04 / 22.04 / 24.04<br>
+<b>Web Server:</b> Apache 2.4
+</div>
+
+<hr>
+
+<h2>1. What is a Virtual Host?</h2>
+<p>
+A <b>Virtual Host</b> allows Apache to host <b>multiple websites on a single server</b>.
+Each website can have:
+</p>
+<ul>
+    <li>Its own domain name</li>
+    <li>Its own folder</li>
+    <li>Its own logs</li>
+</ul>
+
+<div class="box note">
+<b>Example:</b><br>
+site1.local → /var/www/site1.local/<br>
+site2.local → /var/www/site2.local/
+</div>
+
+<hr>
+
+<h2>2. Why Virtual Hosts Are Needed</h2>
+<ul>
+    <li>Shared hosting</li>
+    <li>Development & testing</li>
+    <li>Multiple projects on one server</li>
+    <li>Cost saving</li>
+</ul>
+
+<hr>
+
+<h2>3. Apache Folder Structure (Ubuntu)</h2>
+
+<pre>
+/etc/apache2/sites-available/   → Virtual Host configs
+/etc/apache2/sites-enabled/     → Enabled sites (symlinks)
+/var/www/                       → Website files
+/var/log/apache2/               → Logs
+</pre>
+
+<hr>
+
+<h2>4. LAB 1 – Create Your First Virtual Host</h2>
+
+<div class="box lab">
+<h3>Objective</h3>
+<p>Create and access:</p>
+<pre>http://site1.local</pre>
+</div>
+
+<h3>Step 1: Install Apache</h3>
+<pre>
+sudo apt update
+sudo apt install apache2 -y
+</pre>
+
+<h3>Step 2: Create Website Directory</h3>
+<pre>
+sudo mkdir -p /var/www/site1.local/public_html
+sudo chown -R $USER:$USER /var/www/site1.local
+sudo chmod -R 755 /var/www
+</pre>
+
+<h3>Step 3: Create Test Web Page</h3>
+<pre>
+nano /var/www/site1.local/public_html/index.html
+</pre>
+
+<pre>
+&lt;h1&gt;Site1 Virtual Host Working&lt;/h1&gt;
+</pre>
+
+<h3>Step 4: Create Virtual Host Configuration</h3>
+<pre>
+sudo nano /etc/apache2/sites-available/site1.local.conf
+</pre>
+
+<pre>
+&lt;VirtualHost *:80&gt;
+    ServerName site1.local
+    ServerAlias www.site1.local
+    DocumentRoot /var/www/site1.local/public_html
+
+    &lt;Directory /var/www/site1.local/public_html&gt;
+        AllowOverride All
+        Require all granted
+    &lt;/Directory&gt;
+
+    ErrorLog ${APACHE_LOG_DIR}/site1_error.log
+    CustomLog ${APACHE_LOG_DIR}/site1_access.log combined
+&lt;/VirtualHost&gt;
+</pre>
+
+<h3>Step 5: Enable Site</h3>
+<pre>
+sudo a2ensite site1.local.conf
+sudo a2dissite 000-default.conf
+</pre>
+
+<h3>Step 6: Test & Reload Apache</h3>
+<pre>
+sudo apache2ctl configtest
+sudo systemctl reload apache2
+</pre>
+
+<h3>Step 7: Update Hosts File</h3>
+<pre>
+sudo nano /etc/hosts
+</pre>
+
+<pre>
+127.0.0.1 site1.local
+</pre>
+
+<h3>Validation</h3>
+<p>Open browser and visit:</p>
+<pre>http://site1.local</pre>
+
+<hr>
+
+<h2>5. LAB 2 – Multiple Virtual Hosts</h2>
+
+<div class="box lab">
+<h3>Objective</h3>
+<p>Run two websites on same Apache server</p>
+</div>
+
+<h3>Create Second Site</h3>
+<pre>
+sudo mkdir -p /var/www/site2.local/public_html
+nano /var/www/site2.local/public_html/index.html
+</pre>
+
+<pre>
+&lt;h1&gt;Site2 Virtual Host Working&lt;/h1&gt;
+</pre>
+
+<h3>Create Config</h3>
+<pre>
+sudo nano /etc/apache2/sites-available/site2.local.conf
+</pre>
+
+<pre>
+&lt;VirtualHost *:80&gt;
+    ServerName site2.local
+    DocumentRoot /var/www/site2.local/public_html
+
+    &lt;Directory /var/www/site2.local/public_html&gt;
+        Require all granted
+    &lt;/Directory&gt;
+&lt;/VirtualHost&gt;
+</pre>
+
+<h3>Enable and Reload</h3>
+<pre>
+sudo a2ensite site2.local.conf
+sudo systemctl reload apache2
+</pre>
+
+<h3>Update Hosts</h3>
+<pre>
+127.0.0.1 site1.local
+127.0.0.1 site2.local
+</pre>
+
+<hr>
+
+<h2>6. Logs & Troubleshooting</h2>
+
+<h3>Log Files</h3>
+<pre>
+/var/log/apache2/site1_access.log
+/var/log/apache2/site1_error.log
+</pre>
+
+<h3>Common Errors</h3>
+<ul>
+    <li><b>403 Forbidden</b> → Permission issue</li>
+    <li><b>Default page shown</b> → Default site not disabled</li>
+    <li><b>Apache fails</b> → Syntax error</li>
+</ul>
+
+<hr>
+
+<h2>7. Quick Revision</h2>
+<ul>
+    <li>Virtual Hosts allow multiple sites</li>
+    <li>Each site has its own config</li>
+    <li>a2ensite enables site</li>
+    <li>Always run configtest</li>
+</ul>
+
+<hr>
+
+<h2>8. Practice Task</h2>
+<div class="box lab">
+Create a new virtual host called <b>training.local</b> and verify it in browser.
+</div>
+
+<hr>
+
+<h2>9. Next Steps</h2>
+<ul>
+    <li>HTTPS with SSL</li>
+    <li>PHP with Apache</li>
+    <li>Apache in Docker</li>
+</ul>
+
+<p><b>End of Training</b></p>
+
+</body>
+</html>
